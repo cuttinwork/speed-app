@@ -155,12 +155,12 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
   const fallbackImage = `https://source.unsplash.com/800x800/?${encodeURIComponent(`${vehicle.make} ${vehicle.model} car`.trim())}`;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-full">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-2xl font-bold">{vehicle.year} {vehicle.make} {vehicle.model}</h1>
+        <h1 className="text-2xl font-bold truncate">{vehicle.year} {vehicle.make} {vehicle.model}</h1>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -196,14 +196,14 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
         </Card>
 
         <Card>
-          <CardHeader className="flex-row items-center justify-between">
+          <CardHeader className="flex-col sm:flex-row items-start sm:items-center justify-between gap-4 overflow-hidden">
             <div>
               <h2 className="text-3xl font-semibold">{formatCurrency(vehicle.price)}</h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground truncate">
                 {vehicle.condition} • {vehicle.location}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto justify-start sm:justify-end">
               {isOwner ? (
                 <Button onClick={() => setEditMode(true)}>
                   <Pencil className="h-4 w-4 mr-2" />
@@ -224,12 +224,12 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
           </CardHeader>
           <CardContent className="space-y-6">
             <button
-              className="w-full text-left"
+              className="w-full text-left p-3 sm:p-4 md:p-5"
               onClick={() => onProfileSelect?.(vehicle.owner.id)}
             >
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
                     <AvatarImage src={vehicle.owner.avatar_url || undefined} />
                     <AvatarFallback>
                       <User className="h-5 w-5" />
@@ -247,15 +247,15 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
 
                 {/* Contact Information */}
                 {(vehicle.owner.show_email || vehicle.owner.show_phone) && (
-                  <div className="flex flex-col items-end gap-2 pl-4 border-l border-border">
+                  <div className="w-full sm:w-auto flex flex-col gap-2 sm:pl-4 sm:border-l sm:border-border pt-2 sm:pt-0">
                     {vehicle.owner.show_email && vehicle.owner.email && (
                       <a 
                         href={`mailto:${vehicle.owner.email}`}
                         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Mail className="h-4 w-4" />
-                        {vehicle.owner.email}
+                        <Mail className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate max-w-[200px]">{vehicle.owner.email}</span>
                       </a>
                     )}
                     {vehicle.owner.show_phone && vehicle.owner.phone_number && (
@@ -264,8 +264,8 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
                         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Phone className="h-4 w-4" />
-                        {formatPhoneNumber(vehicle.owner.phone_number)}
+                        <Phone className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{formatPhoneNumber(vehicle.owner.phone_number)}</span>
                       </a>
                     )}
                   </div>
@@ -273,18 +273,21 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
               </div>
             </button>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold">{vehicle.year}</div>
-                <div className="text-sm text-muted-foreground">Year</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{formatNumber(vehicle.mileage)}</div>
-                <div className="text-sm text-muted-foreground">Miles</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold capitalize">{vehicle.transmission || '—'}</div>
-                <div className="text-sm text-muted-foreground">Transmission</div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Key Information</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{vehicle.year}</div>
+                  <div className="text-sm text-muted-foreground">Year</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{formatNumber(vehicle.mileage)}</div>
+                  <div className="text-sm text-muted-foreground">Miles</div>
+                </div>
+                <div className="text-center col-span-2 sm:col-span-1">
+                  <div className="text-2xl font-bold capitalize truncate">{vehicle.transmission || '—'}</div>
+                  <div className="text-sm text-muted-foreground">Transmission</div>
+                </div>
               </div>
             </div>
 
@@ -292,32 +295,34 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
 
             <div>
               <h3 className="text-lg font-semibold mb-2">Details</h3>
-              <div className="grid grid-cols-2 gap-y-2">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                <div className="overflow-hidden">
                   <span className="text-muted-foreground">Make:</span>
-                  <span className="ml-2">{vehicle.make}</span>
+                  <span className="ml-2 truncate">{vehicle.make}</span>
                 </div>
-                <div>
+                <div className="overflow-hidden">
                   <span className="text-muted-foreground">Model:</span>
-                  <span className="ml-2">{vehicle.model}</span>
+                  <span className="ml-2 truncate">{vehicle.model}</span>
                 </div>
-                <div>
+                <div className="overflow-hidden">
                   <span className="text-muted-foreground">Color:</span>
-                  <span className="ml-2">{vehicle.color || '—'}</span>
+                  <span className="ml-2 truncate">{vehicle.color || '—'}</span>
                 </div>
-                <div>
+                <div className="overflow-hidden">
                   <span className="text-muted-foreground">Fuel:</span>
-                  <span className="ml-2 capitalize">{vehicle.fuel_type || '—'}</span>
+                  <span className="ml-2 capitalize truncate">{vehicle.fuel_type || '—'}</span>
                 </div>
               </div>
             </div>
+
+            <Separator />
 
             {vehicle.description && (
               <>
                 <Separator />
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Description</h3>
-                  <p className="text-muted-foreground">{vehicle.description}</p>
+                  <p className="text-muted-foreground break-words">{vehicle.description}</p>
                 </div>
               </>
             )}
@@ -329,7 +334,7 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
                   <h3 className="text-lg font-semibold mb-2">Features</h3>
                   <div className="flex flex-wrap gap-2">
                     {vehicle.features.map((feature, i) => (
-                      <Badge key={i} variant="secondary">{feature}</Badge>
+                      <Badge key={i} variant="secondary" className="break-words max-w-full sm:max-w-[200px]">{feature}</Badge>
                     ))}
                   </div>
                 </div>
@@ -340,7 +345,7 @@ export function VehicleProfile({ dogId: vehicleId, onBack, onProfileSelect }: Ve
 
             <div>
               <h3 className="text-lg font-semibold mb-2">Location</h3>
-              <p className="text-muted-foreground">{vehicle.location}</p>
+              <p className="text-muted-foreground break-words">{vehicle.location}</p>
             </div>
           </CardContent>
         </Card>
