@@ -29,13 +29,6 @@ type Profile = {
   show_phone: boolean;
 };
 
-type Vehicle = {
-  id: string;
-  year: number;
-  make: string;
-  model: string;
-};
-
 type UserProfileProps = {
   userId: string;
   onBack?: () => void;
@@ -64,11 +57,22 @@ export function UserProfile({ userId, onBack, onVehicleSelect, initialEditMode =
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(initialEditMode);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; vehicle: Vehicle | null }>({
-    open: false,
-    vehicle: null,
-  });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [vehicleToDelete, setVehicleToDelete] = useState<string | null>(null);
   const isOwnProfile = user?.id === userId;
+
+  // Check for edit=true in the URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const editParam = params.get('edit');
+    if (editParam === 'true' && isOwnProfile) {
+      setEditMode(true);
+    }
+  }, [isOwnProfile]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [userId]);
 
   const {
     register,
@@ -91,10 +95,6 @@ export function UserProfile({ userId, onBack, onVehicleSelect, initialEditMode =
 
   const showEmail = watch('show_email');
   const showPhone = watch('show_phone');
-
-  useEffect(() => {
-    loadProfile();
-  }, [userId]);
 
   async function loadProfile() {
     try {
@@ -181,17 +181,20 @@ export function UserProfile({ userId, onBack, onVehicleSelect, initialEditMode =
     }
   };
 
-  const handleDeleteVehicle = async (vehicleId: string) => {
+  async function handleDeleteVehicle() {
+    if (!vehicleToDelete) return;
+    
     try {
       const { error } = await supabase
         .from('vehicles')
         .delete()
-        .eq('id', vehicleId);
+        .eq('id', vehicleToDelete);
 
       if (error) throw error;
 
       toast.success('Vehicle deleted successfully');
-      setDeleteDialog({ open: false, vehicle: null });
+      setDeleteDialogOpen(false);
+      setVehicleToDelete(null);
       window.location.reload();
     } catch (error) {
       console.error('Error deleting vehicle:', error);
@@ -448,27 +451,36 @@ export function UserProfile({ userId, onBack, onVehicleSelect, initialEditMode =
       <VehicleGrid 
         onVehicleSelect={onVehicleSelect || (() => {})}
         userId={userId}
-        onDeleteVehicle={(vehicle) => setDeleteDialog({ open: true, vehicle })}
+        onDeleteVehicle={(vehicle) => {
+          setVehicleToDelete(vehicle.id);
+          setDeleteDialogOpen(true);
+        }}
       />
 
-      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, vehicle: null })}>
+      <Dialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) setVehicleToDelete(null);
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Vehicle Listing</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete your {deleteDialog.vehicle?.year} {deleteDialog.vehicle?.make} {deleteDialog.vehicle?.model} listing? This action cannot be undone.
+              Are you sure you want to delete this vehicle listing? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="ghost"
-              onClick={() => setDeleteDialog({ open: false, vehicle: null })}
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setVehicleToDelete(null);
+              }}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
-              onClick={() => deleteDialog.vehicle && handleDeleteVehicle(deleteDialog.vehicle.id)}
+              onClick={handleDeleteVehicle}
             >
               Delete Listing
             </Button>

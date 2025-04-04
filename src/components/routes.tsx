@@ -11,24 +11,23 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-
-type View = 'grid' | 'profile' | 'messages' | 'settings' | 'user-profile' | 'auth' | 'edit-profile';
+import { Routes as RouterRoutes, Route, useNavigate, useParams, useLocation, Link, Navigate } from 'react-router-dom';
 
 export function Routes() {
   const { user, loading } = useAuth();
-  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
-  const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [showNewListing, setShowNewListing] = useState(false);
-  const [currentView, setCurrentView] = useState<View>('grid');
-  const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    // Reset edit mode when user changes
-    if (!user) {
-      setEditMode(false);
+    // Extract search query from URL if present
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q');
+    if (q) {
+      setSearchQuery(q);
     }
-  }, [user]);
+  }, [location.search]);
 
   if (loading) {
     return (
@@ -38,104 +37,36 @@ export function Routes() {
     );
   }
 
-  const handleNavigation = (view: View) => {
-    setCurrentView(view);
-    setSelectedVehicle(null);
-    setSelectedProfile(null);
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    // Update URL with search query
+    const params = new URLSearchParams(location.search);
+    if (value) {
+      params.set('q', value);
+    } else {
+      params.delete('q');
+    }
+    navigate({ search: params.toString() });
   };
 
   const handleListingComplete = () => {
     setShowNewListing(false);
-    handleNavigation('grid');
-  };
-
-  const handleProfileSelect = (userId: string) => {
-    setSelectedProfile(userId);
-    setSelectedVehicle(null);
-    setCurrentView('profile');
-  };
-
-  const handleAuthSuccess = (isNewUser?: boolean) => {
-    setEditMode(isNewUser || false);
-    handleNavigation('user-profile');
-  };
-
-  const renderContent = () => {
-    if (currentView === 'auth') {
-      return (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Gauge className="h-12 w-12 mb-4" />
-          <h1 className="text-4xl font-bold mb-8">speed.app</h1>
-          <div className="w-full max-w-sm">
-            <AuthForm onAuthSuccess={handleAuthSuccess} />
-          </div>
-        </div>
-      );
-    }
-
-    if (selectedVehicle) {
-      return (
-        <VehicleProfile 
-          dogId={selectedVehicle} 
-          onBack={() => setSelectedVehicle(null)}
-          onProfileSelect={handleProfileSelect}
-        />
-      );
-    }
-
-    if (!user) {
-      return <VehicleGrid onVehicleSelect={setSelectedVehicle} searchQuery={searchQuery} />;
-    }
-
-    if (selectedProfile) {
-      return (
-        <UserProfile 
-          userId={selectedProfile} 
-          onBack={() => {
-            setSelectedProfile(null);
-            setCurrentView('grid');
-          }}
-          onVehicleSelect={setSelectedVehicle}
-        />
-      );
-    }
-
-    switch (currentView) {
-      case 'messages':
-        return <MessagesList />;
-      case 'user-profile':
-        return (
-          <UserProfile 
-            userId={user.id}
-            onVehicleSelect={setSelectedVehicle}
-            initialEditMode={editMode}
-            onEditComplete={() => setEditMode(false)}
-          />
-        );
-      case 'grid':
-      default:
-        return (
-          <VehicleGrid 
-            onVehicleSelect={setSelectedVehicle}
-            searchQuery={searchQuery}
-          />
-        );
-    }
+    navigate('/');
   };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 max-w-screen-2xl items-center justify-between gap-4 px-8">
-          <button 
-            onClick={() => handleNavigation('grid')}
+          <Link 
+            to="/"
             className="flex items-center gap-2 font-bold hover:opacity-80 transition-opacity shrink-0"
           >
             <Gauge className="h-6 w-6" />
             <span className="inline-block">speed.app</span>
-          </button>
+          </Link>
 
-          {currentView !== 'auth' && (
+          {location.pathname !== '/auth' && (
             <div className="flex-1 max-w-xl">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -144,7 +75,7 @@ export function Routes() {
                   placeholder="Search"
                   className="w-full pl-9"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                 />
               </div>
             </div>
@@ -152,13 +83,13 @@ export function Routes() {
 
           {user ? (
             <UserNav 
-              onMessagesClick={() => handleNavigation('messages')} 
+              onMessagesClick={() => navigate('/messages')} 
               onNewListingClick={() => setShowNewListing(true)}
-              onProfileClick={() => handleNavigation('user-profile')}
+              onProfileClick={() => navigate('/profile')}
             />
           ) : (
-            currentView !== 'auth' && (
-              <Button onClick={() => handleNavigation('auth')}>
+            location.pathname !== '/auth' && (
+              <Button onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
             )
@@ -167,7 +98,21 @@ export function Routes() {
       </header>
 
       <main className="container max-w-screen-2xl px-8 py-6">
-        {renderContent()}
+        <RouterRoutes>
+          <Route path="/" element={<VehicleGrid onVehicleSelect={(id) => navigate(`/vehicle/${id}`)} searchQuery={searchQuery} />} />
+          <Route path="/vehicle/:id" element={<VehicleProfileWrapper />} />
+          <Route path="/user/:id" element={<UserProfileWrapper />} />
+          <Route path="/profile" element={user ? <UserProfile userId={user.id} onVehicleSelect={(id) => navigate(`/vehicle/${id}`)} /> : <Navigate to="/auth" />} />
+          <Route path="/messages" element={user ? <MessagesList /> : <Navigate to="/auth" />} />
+          <Route path="/auth" element={<AuthPage onAuthSuccess={(isNewUser) => {
+            if (isNewUser) {
+              navigate('/profile?edit=true');
+            } else {
+              navigate('/');
+            }
+          }} />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </RouterRoutes>
       </main>
 
       <Dialog open={showNewListing} onOpenChange={setShowNewListing}>
@@ -176,6 +121,49 @@ export function Routes() {
           <AccountCreation onComplete={handleListingComplete} />
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// Wrapper components for routes with parameters
+function VehicleProfileWrapper() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  if (!id) return <Navigate to="/" />;
+  
+  return (
+    <VehicleProfile 
+      dogId={id} 
+      onBack={() => navigate(-1)}
+      onProfileSelect={(userId) => navigate(`/user/${userId}`)}
+    />
+  );
+}
+
+function UserProfileWrapper() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  if (!id) return <Navigate to="/" />;
+  
+  return (
+    <UserProfile 
+      userId={id} 
+      onBack={() => navigate(-1)}
+      onVehicleSelect={(vehicleId) => navigate(`/vehicle/${vehicleId}`)}
+    />
+  );
+}
+
+function AuthPage({ onAuthSuccess }: { onAuthSuccess: (isNewUser?: boolean) => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <Gauge className="h-12 w-12 mb-4" />
+      <h1 className="text-4xl font-bold mb-8">speed.app</h1>
+      <div className="w-full max-w-sm">
+        <AuthForm onAuthSuccess={onAuthSuccess} />
+      </div>
     </div>
   );
 }
