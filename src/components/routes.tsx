@@ -11,9 +11,9 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Routes as RouterRoutes, Route, useNavigate, useParams, useLocation, Link, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams, useLocation, Link, Navigate } from 'react-router-dom';
 
-export function Routes() {
+export function AppRoutes() {
   const { user, loading } = useAuth();
   const [showNewListing, setShowNewListing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,7 +98,7 @@ export function Routes() {
       </header>
 
       <main className="container max-w-screen-2xl px-8 py-6">
-        <RouterRoutes>
+        <Routes>
           <Route path="/" element={<VehicleGrid onVehicleSelect={(id) => navigate(`/vehicle/${id}`)} searchQuery={searchQuery} />} />
           <Route path="/vehicle/:id" element={<VehicleProfileWrapper />} />
           <Route path="/user/:id" element={<UserProfileWrapper />} />
@@ -112,7 +112,7 @@ export function Routes() {
             }
           }} />} />
           <Route path="*" element={<Navigate to="/" />} />
-        </RouterRoutes>
+        </Routes>
       </main>
 
       <Dialog open={showNewListing} onOpenChange={setShowNewListing}>
