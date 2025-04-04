@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
-import { ChevronLeft, Pencil, Trash2, User, Phone, Mail, MapPin, ImagePlus, Loader2 } from 'lucide-react';
+import { ChevronLeft, Pencil, User, Phone, Mail, MapPin, ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { VehicleGrid } from './dog-grid';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';

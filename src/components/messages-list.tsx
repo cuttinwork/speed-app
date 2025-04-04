@@ -42,7 +42,7 @@ export function MessagesList() {
             participant:participant2_id(id, full_name, avatar_url),
             latest_message:chat_messages(content, created_at, sender_id)
           `)
-          .eq('participant1_id', user.id)
+          .eq('participant1_id', user?.id)
           .order('last_message_at', { ascending: false });
 
         if (error) throw error;
@@ -55,7 +55,7 @@ export function MessagesList() {
             participant:participant1_id(id, full_name, avatar_url),
             latest_message:chat_messages(content, created_at, sender_id)
           `)
-          .eq('participant2_id', user.id)
+          .eq('participant2_id', user?.id)
           .order('last_message_at', { ascending: false });
 
         if (error2) throw error2;
@@ -129,7 +129,10 @@ export function MessagesList() {
       <ScrollArea className="h-[600px] pr-4">
         <div className="space-y-4">
           {rooms.map((room) => {
-            const latestMessage = room.latest_message?.[0];
+            // Fix the array indexing issue by properly accessing the latest message
+            const latestMessage = room.latest_message && (Array.isArray(room.latest_message) 
+              ? room.latest_message[0] 
+              : room.latest_message);
             
             return (
               <Card
@@ -151,7 +154,7 @@ export function MessagesList() {
                       </p>
                       {latestMessage && (
                         <p className="text-sm text-muted-foreground truncate">
-                          {latestMessage.sender_id === user.id ? 'You: ' : ''}
+                          {latestMessage.sender_id === user?.id ? 'You: ' : ''}
                           {latestMessage.content}
                         </p>
                       )}

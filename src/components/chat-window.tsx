@@ -29,7 +29,7 @@ export function ChatWindow({ otherUserId, otherUserName, otherUserAvatar }: Chat
     loading,
     sendMessage,
     setTyping,
-    markAsRead,
+    // markAsRead, // Commented out since it's unused
     deleteMessage,
   } = useChat(otherUserId);
 

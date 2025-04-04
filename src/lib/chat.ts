@@ -44,8 +44,8 @@ export function useChat(otherUserId: string) {
           .from('chat_rooms')
           .select('*')
           .or(
-            `and(participant1_id.eq.${user.id},participant2_id.eq.${otherUserId}),` +
-            `and(participant1_id.eq.${otherUserId},participant2_id.eq.${user.id})`
+            `and(participant1_id.eq.${user?.id},participant2_id.eq.${otherUserId}),` +
+            `and(participant1_id.eq.${otherUserId},participant2_id.eq.${user?.id})`
           )
           .order('created_at', { ascending: true })
           .limit(1)
@@ -55,7 +55,7 @@ export function useChat(otherUserId: string) {
 
         if (!currentRoom) {
           // Ensure participants are ordered consistently to avoid unique constraint violations
-          const [participant1_id, participant2_id] = [user.id, otherUserId].sort();
+          const [participant1_id, participant2_id] = [user?.id, otherUserId].sort();
           
           try {
             const { data: newRoom, error: createError } = await supabase
@@ -140,10 +140,12 @@ export function useChat(otherUserId: string) {
               filter: `room_id=eq.${currentRoom.id}`,
             },
             (payload) => {
-              if (payload.new?.user_id === otherUserId) {
-                setIsOtherUserTyping(true);
-                // Auto-remove typing indicator after 3 seconds
-                setTimeout(() => setIsOtherUserTyping(false), 3000);
+              if (payload.new && typeof payload.new === 'object' && 'user_id' in payload.new) {
+                if (payload.new.user_id === otherUserId) {
+                  setIsOtherUserTyping(true);
+                  // Auto-remove typing indicator after 3 seconds
+                  setTimeout(() => setIsOtherUserTyping(false), 3000);
+                }
               }
             }
           )
@@ -171,7 +173,7 @@ export function useChat(otherUserId: string) {
       // Create the message object
       const newMessage: Partial<ChatMessage> = {
         room_id: room.id,
-        sender_id: user.id,
+        sender_id: user?.id,
         content,
         created_at: new Date().toISOString(),
       };
@@ -187,7 +189,7 @@ export function useChat(otherUserId: string) {
       if (error) {
         // If there's an error, remove the optimistically added message
         setMessages((current) => 
-          current.filter(msg => msg.content !== content || msg.sender_id !== user.id)
+          current.filter(msg => msg.content !== content || msg.sender_id !== user?.id)
         );
         throw error;
       }
@@ -207,7 +209,7 @@ export function useChat(otherUserId: string) {
           .upsert(
             {
               room_id: room.id,
-              user_id: user.id,
+              user_id: user?.id,
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'room_id,user_id' }
@@ -216,7 +218,7 @@ export function useChat(otherUserId: string) {
         await supabase
           .from('typing_indicators')
           .delete()
-          .match({ room_id: room.id, user_id: user.id });
+          .match({ room_id: room.id, user_id: user?.id });
       }
     } catch (error) {
       console.error('Error updating typing indicator:', error);
@@ -245,7 +247,7 @@ export function useChat(otherUserId: string) {
         .from('chat_messages')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', messageId)
-        .eq('sender_id', user.id);
+        .eq('sender_id', user?.id);
     } catch (error) {
       console.error('Error deleting message:', error);
     }
